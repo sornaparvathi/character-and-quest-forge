@@ -7,15 +7,15 @@ import { PageHeading, pageMeta } from '@/components/studio-layout';
 import { useStudio } from '@/components/studio-context';
 import { createIdea, genres, twists, type IdeaMode } from '@/lib/story-engine';
 
-export const Route = createFileRoute('/generator')({ validateSearch: (search: Record<string, unknown>) => ({ seed: typeof search.seed === 'string' ? search.seed : '' }), head: () => pageMeta('Idea Generator', 'Create story hooks, screenplay scenes, three-act outlines and surprising twists in the Beyond A-Z writing studio.'), component: Generator });
+export const Route = createFileRoute('/generator')({ validateSearch: (search: Record<string, unknown>): { seed?: string } => ({ seed: typeof search['seed'] === 'string' ? search['seed'] : '' }), head: () => pageMeta('Idea Generator', 'Create story hooks, screenplay scenes, three-act outlines and surprising twists in the Beyond A-Z writing studio.'), component: Generator });
 function Generator() {
   const search = Route.useSearch();
   const { save, reward } = useStudio();
-  const [seed, setSeed] = useState(search.seed);
+  const [seed, setSeed] = useState(search.seed || '');
   const [mode, setMode] = useState<IdeaMode>('Story');
   const [genre, setGenre] = useState(genres[0]);
   const [tone, setTone] = useState(50);
-  const [twist, setTwist] = useState(twists[0]);
+  const [twist, setTwist] = useState(twists[0] || 'A clock that ticks backwards');
   const [output, setOutput] = useState<ReturnType<typeof createIdea> | null>(null);
   const [tab, setTab] = useState('Logline / Hook');
   const [loading, setLoading] = useState(false);

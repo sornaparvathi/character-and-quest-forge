@@ -7,7 +7,7 @@ import { PageHeading, pageMeta } from '@/components/studio-layout';
 import { useStudio } from '@/components/studio-context';
 import archivist from '@/assets/archivist.jpg';
 
-export const Route = createFileRoute('/characters')({ validateSearch: (search: Record<string, unknown>) => ({ name: typeof search.name === 'string' ? search.name : '', seed: typeof search.seed === 'string' ? search.seed : '' }), head: () => pageMeta('Character Weaver', 'Create unforgettable character profiles, flaws, motivations and hidden secrets for your next story.'), component: Characters });
+export const Route = createFileRoute('/characters')({ validateSearch: (search: Record<string, unknown>): { name?: string; seed?: string } => ({ name: typeof search['name'] === 'string' ? search['name'] : '', seed: typeof search['seed'] === 'string' ? search['seed'] : '' }), head: () => pageMeta('Character Weaver', 'Create unforgettable character profiles, flaws, motivations and hidden secrets for your next story.'), component: Characters });
 function Characters() {
   const search = Route.useSearch();
   const { save, reward } = useStudio();
