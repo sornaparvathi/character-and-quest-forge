@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StudioProvider } from '@/components/studio-context';
+import { AuthProvider } from '@/components/auth-context';
 import { StudioLayout } from '@/components/studio-layout';
 import { Toaster } from 'sonner';
 
@@ -121,7 +122,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <StudioProvider><StudioLayout><Outlet /></StudioLayout><Toaster theme="dark" position="bottom-right" /></StudioProvider>
+      <AuthProvider><StudioProvider><StudioLayout><Outlet /></StudioLayout><Toaster theme="dark" position="bottom-right" /></StudioProvider></AuthProvider>
     </QueryClientProvider>
   );
 }

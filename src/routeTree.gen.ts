@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdventureRouteImport } from './routes/adventure'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CharactersRouteImport } from './routes/characters'
 import { Route as GeneratorRouteImport } from './routes/generator'
 import { Route as VaultRouteImport } from './routes/vault'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdventureRoute = AdventureRouteImport.update({
   id: '/adventure',
   path: '/adventure',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CharactersRoute = CharactersRouteImport.update({
@@ -44,6 +50,7 @@ const VaultRoute = VaultRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adventure': typeof AdventureRoute
+  '/auth': typeof AuthRoute
   '/characters': typeof CharactersRoute
   '/generator': typeof GeneratorRoute
   '/vault': typeof VaultRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adventure': typeof AdventureRoute
+  '/auth': typeof AuthRoute
   '/characters': typeof CharactersRoute
   '/generator': typeof GeneratorRoute
   '/vault': typeof VaultRoute
@@ -59,21 +67,31 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/adventure': typeof AdventureRoute
+  '/auth': typeof AuthRoute
   '/characters': typeof CharactersRoute
   '/generator': typeof GeneratorRoute
   '/vault': typeof VaultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/adventure' | '/characters' | '/generator' | '/vault'
+  fullPaths:
+    '/' | '/adventure' | '/auth' | '/characters' | '/generator' | '/vault'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/adventure' | '/characters' | '/generator' | '/vault'
-  id: '__root__' | '/' | '/adventure' | '/characters' | '/generator' | '/vault'
+  to: '/' | '/adventure' | '/auth' | '/characters' | '/generator' | '/vault'
+  id:
+    | '__root__'
+    | '/'
+    | '/adventure'
+    | '/auth'
+    | '/characters'
+    | '/generator'
+    | '/vault'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdventureRoute: typeof AdventureRoute
+  AuthRoute: typeof AuthRoute
   CharactersRoute: typeof CharactersRoute
   GeneratorRoute: typeof GeneratorRoute
   VaultRoute: typeof VaultRoute
@@ -93,6 +111,13 @@ declare module '@tanstack/react-router' {
       path: '/adventure'
       fullPath: '/adventure'
       preLoaderRoute: typeof AdventureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/characters': {
@@ -122,6 +147,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdventureRoute: AdventureRoute,
+  AuthRoute: AuthRoute,
   CharactersRoute: CharactersRoute,
   GeneratorRoute: GeneratorRoute,
   VaultRoute: VaultRoute,
