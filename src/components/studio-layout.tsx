@@ -1,14 +1,19 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useRef, useState, type ReactNode } from 'react';
-import { ArrowUpRight, BookOpen, Feather, Gamepad2, Menu, Sparkles, UserRound, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Feather, Gamepad2, LogOut, Menu, Pencil, Sparkles, UserRound, Volume2, VolumeX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStudio } from './studio-context';
+import { useAuth } from './auth-context';
 import logo from '@/assets/logo.png.asset.json';
 
 const links = [{ to: '/', label: 'The Portal' }, { to: '/generator', label: 'Idea Generator' }, { to: '/characters', label: 'Character Weaver' }, { to: '/adventure', label: 'Your Adventure' }, { to: '/vault', label: 'Lore Vault' }] as const;
 export function StudioLayout({ children }: { children: ReactNode }) {
   const { sparks, name, setName } = useStudio();
+  const { user, hydrated, signOut } = useAuth();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: state => state.location.pathname });
   const [menu, setMenu] = useState(false);
   const [circle, setCircle] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -21,11 +26,44 @@ export function StudioLayout({ children }: { children: ReactNode }) {
     [130.81, 196, 261.63].forEach(frequency => { const oscillator = context.createOscillator(); oscillator.frequency.value = frequency; oscillator.connect(gain); oscillator.start(); });
     setSound(true);
   };
+  const openCircle = () => { setDraftName(name); setCircle(true); };
+  const handleSignOut = () => {
+    signOut();
+    void navigate({ to: '/auth', replace: true });
+  };
+
+  useEffect(() => {
+    if (hydrated && !user && pathname !== '/auth') void navigate({ to: '/auth', replace: true });
+  }, [hydrated, user, pathname, navigate]);
+
+  // The gateway is the first view: until hydration confirms a signed-in
+  // creator, only the waking portal is shown, never the studio itself.
+  if (!hydrated || (!user && pathname !== '/auth')) {
+    return <div className="gate-loader"><div className="auth-swirl" /><p>Waking the portal…</p></div>;
+  }
+  if (pathname === '/auth') return <>{children}</>;
+
   return <div className="studio-shell">
     <header className="site-header">
       <Link to="/" className="brand"><img src={logo.url} alt="Beyond A-Z open book and imagination portal logo" width={48} height={48} /><span><strong>Beyond A-Z<span className="brand-star">✧</span></strong><small>TRANSCEND THE ALPHABET</small></span></Link>
       <nav className="desktop-nav" aria-label="Main navigation">{links.map(link => <Link key={link.to} to={link.to} activeOptions={{ exact: true }} activeProps={{ className: 'nav-active' }}>{link.label}</Link>)}</nav>
-      <div className="header-actions"><span className="spark-count"><Sparkles size={13} /> {sparks} <span>Sparks</span></span><Button variant="ghost" size="icon" onClick={toggleSound} aria-label={sound ? 'Mute ambience' : 'Play ambience'} title={sound ? 'Mute ambience' : 'Play ambience'}>{sound ? <Volume2 /> : <VolumeX />}</Button><Button variant="outline" className="circle-button" onClick={() => { setDraftName(name); setCircle(true); }}><UserRound />{name || 'Enter the Circle'}</Button><Button variant="ghost" size="icon" className="mobile-toggle" onClick={() => setMenu(!menu)} aria-label="Toggle navigation">{menu ? <X /> : <Menu />}</Button></div>
+      <div className="header-actions"><span className="spark-count"><Sparkles size={13} /> {sparks} <span>Sparks</span></span><Button variant="ghost" size="icon" onClick={toggleSound} aria-label={sound ? 'Mute ambience' : 'Play ambience'} title={sound ? 'Mute ambience' : 'Play ambience'}>{sound ? <Volume2 /> : <VolumeX />}</Button>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="circle-button profile-badge" aria-label="Account menu"><span className="profile-dot">{(name || user.name || 'C').trim().charAt(0).toUpperCase()}</span><span className="profile-name">{name || user.name}</span></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel><span className="profile-label">{user.email}</span></DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={openCircle}><Pencil /> Writer name…</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}><LogOut /> Log Out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="outline" className="circle-button" onClick={openCircle}><UserRound />{name || 'Enter the Circle'}</Button>
+        )}
+        <Button variant="ghost" size="icon" className="mobile-toggle" onClick={() => setMenu(!menu)} aria-label="Toggle navigation">{menu ? <X /> : <Menu />}</Button></div>
     </header>
     {menu && <nav className="mobile-nav" aria-label="Mobile navigation">{links.map(link => <Link key={link.to} to={link.to} onClick={() => setMenu(false)}>{link.label}<ArrowUpRight size={16} /></Link>)}</nav>}
     <main>{children}</main>
