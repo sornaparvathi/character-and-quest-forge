@@ -52,19 +52,20 @@ function Gateway() {
 
   const mockSignIn = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!isValidEmail(email)) return toast.error('That email does not look quite magical yet.');
-    if (!password) return toast.error('Your secret spell (password) is missing.');
+    if (!isValidEmail(email)) { toast.error('That email does not look quite magical yet.'); return; }
+    if (!password) { toast.error('Your secret spell (password) is missing.'); return; }
     setBusy('password');
-    window.setTimeout(() => enterPortal(email.trim().split('@')[0].replace(/[._]/g, ' ')), 1200);
+    const local = email.trim().split('@')[0] ?? email.trim();
+    window.setTimeout(() => enterPortal(local.replace(/[._]/g, ' ')), 1200);
   };
 
   const mockSignUp = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!penName.trim()) return toast.error('Every creator needs a pen name.');
-    if (!isValidEmail(email)) return toast.error('That email does not look quite magical yet.');
-    if (passwordStrength(password) === 'weak') return toast.error('Choose at least 8 characters so your spell holds.');
-    if (password !== confirm) return toast.error('The two passwords do not match.');
-    if (!agreed) return toast.error('Please agree to the Terms of the Multiverse first.');
+    if (!penName.trim()) { toast.error('Every creator needs a pen name.'); return; }
+    if (!isValidEmail(email)) { toast.error('That email does not look quite magical yet.'); return; }
+    if (passwordStrength(password) === 'weak') { toast.error('Choose at least 8 characters so your spell holds.'); return; }
+    if (password !== confirm) { toast.error('The two passwords do not match.'); return; }
+    if (!agreed) { toast.error('Please agree to the Terms of the Multiverse first.'); return; }
     setBusy('password');
     window.setTimeout(() => enterPortal(penName.trim()), 1200);
   };
