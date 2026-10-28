@@ -4,7 +4,7 @@ import { clearAuth, isValidEmail, loadStoredAuth, passwordStrength, storeAuth } 
 describe('password strength', () => {
   it('calls short passwords weak', () => {
     expect(passwordStrength('abc')).toBe('weak');
-    expect(passwordStrength('Abcdef1!')).toBe('weak'); // under 8 characters
+    expect(passwordStrength('Abcde1!')).toBe('weak'); // under 8 characters
   });
 
   it('calls mixed passwords good', () => {
