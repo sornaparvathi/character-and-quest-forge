@@ -14,13 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      adventure_sessions: {
+        Row: {
+          archetype: string
+          created_at: string
+          difficulty: string
+          finished: boolean
+          id: string
+          state: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archetype?: string
+          created_at?: string
+          difficulty?: string
+          finished?: boolean
+          id?: string
+          state?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archetype?: string
+          created_at?: string
+          difficulty?: string
+          finished?: boolean
+          id?: string
+          state?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      characters: {
+        Row: {
+          appearance: string
+          archetype: string
+          created_at: string
+          details: Json
+          id: string
+          image_path: string | null
+          name: string
+          style: string
+          user_id: string
+        }
+        Insert: {
+          appearance?: string
+          archetype?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          image_path?: string | null
+          name: string
+          style?: string
+          user_id: string
+        }
+        Update: {
+          appearance?: string
+          archetype?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          image_path?: string | null
+          name?: string
+          style?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entries: {
+        Row: {
+          content: string
+          created_at: string
+          favorite: boolean
+          genre: string
+          id: string
+          kind: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          favorite?: boolean
+          genre?: string
+          id?: string
+          kind: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          favorite?: boolean
+          genre?: string
+          id?: string
+          kind?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          sparks: number
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id: string
+          sparks?: number
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          sparks?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      award_sparks: { Args: { amount: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never
