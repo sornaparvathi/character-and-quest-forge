@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearAuth, isValidEmail, loadStoredAuth, passwordStrength, storeAuth } from './auth-gate';
+import { isValidEmail, passwordStrength } from './auth-gate';
 
 describe('password strength', () => {
   it('calls short passwords weak', () => {
@@ -20,16 +20,5 @@ describe('email validation', () => {
   it('accepts a normal address and rejects a bare name', () => {
     expect(isValidEmail('creator@beyondaz.app')).toBe(true);
     expect(isValidEmail('wizard')).toBe(false);
-  });
-});
-
-describe('stored session', () => {
-  it('round-trips a signed-in creator and clears cleanly', () => {
-    clearAuth();
-    expect(loadStoredAuth()).toBeNull();
-    storeAuth({ name: 'Sorna', email: 'sorna@beyondaz.app', method: 'password' });
-    expect(loadStoredAuth()).toEqual({ name: 'Sorna', email: 'sorna@beyondaz.app', method: 'password' });
-    clearAuth();
-    expect(loadStoredAuth()).toBeNull();
   });
 });

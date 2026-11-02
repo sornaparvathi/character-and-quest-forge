@@ -1,0 +1,1 @@
+create policy "characters_update_own" on public.characters for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());

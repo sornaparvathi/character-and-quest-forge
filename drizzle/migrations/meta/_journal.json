@@ -8,6 +8,13 @@
       "when": 1793626435309,
       "tag": "0000_create_studio_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793626514263,
+      "tag": "0001_characters_update_policy",
+      "breakpoints": true
     }
   ]
 }
