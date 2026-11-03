@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpRight, BookOpen, Feather, Gamepad2, LogOut, Menu, Pencil, Sparkles, UserRound, Volume2, VolumeX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ const links = [{ to: '/', label: 'The Portal' }, { to: '/generator', label: 'Ide
 export function StudioLayout({ children }: { children: ReactNode }) {
   const { sparks, name, setName } = useStudio();
   const { user, hydrated, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: state => state.location.pathname });
   const [menu, setMenu] = useState(false);
@@ -27,8 +29,10 @@ export function StudioLayout({ children }: { children: ReactNode }) {
     setSound(true);
   };
   const openCircle = () => { setDraftName(name); setCircle(true); };
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await signOut();
     void navigate({ to: '/auth', replace: true });
   };
 
@@ -57,18 +61,18 @@ export function StudioLayout({ children }: { children: ReactNode }) {
               <DropdownMenuLabel><span className="profile-label">{user.email}</span></DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={openCircle}><Pencil /> Writer name…</DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}><LogOut /> Log Out</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleSignOut()}><LogOut /> Log Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="outline" className="circle-button" onClick={openCircle}><UserRound />{name || 'Enter the Circle'}</Button>
+          <Button variant="outline" className="circle-button" onClick={() => void navigate({ to: '/auth' })}><UserRound />Enter the Circle</Button>
         )}
         <Button variant="ghost" size="icon" className="mobile-toggle" onClick={() => setMenu(!menu)} aria-label="Toggle navigation">{menu ? <X /> : <Menu />}</Button></div>
     </header>
     {menu && <nav className="mobile-nav" aria-label="Mobile navigation">{links.map(link => <Link key={link.to} to={link.to} onClick={() => setMenu(false)}>{link.label}<ArrowUpRight size={16} /></Link>)}</nav>}
     <main>{children}</main>
     <footer className="site-footer"><span className="footer-brand"><Feather size={16} /> Beyond A-Z</span><span>26 letters. Infinite possibilities.</span><span>Made for the stories only you can tell <Sparkles size={12} /></span></footer>
-    <Dialog open={circle} onOpenChange={setCircle}><DialogContent><DialogHeader><DialogTitle>Enter the Circle</DialogTitle><DialogDescription>Your own little corner of the multiverse. This preview keeps your name and drafts on this device; no online account is created.</DialogDescription></DialogHeader><form onSubmit={e => { e.preventDefault(); setName(draftName.trim()); setCircle(false); }} className="space-y-4"><label className="field-label" htmlFor="writer-name">Your writer name</label><input id="writer-name" className="studio-input" value={draftName} onChange={e => setDraftName(e.target.value)} placeholder="What shall we call you?" required maxLength={40} /><Button type="submit" className="w-full"><Sparkles /> Enter my studio</Button></form></DialogContent></Dialog>
+    <Dialog open={circle} onOpenChange={setCircle}><DialogContent><DialogHeader><DialogTitle>Enter the Circle</DialogTitle><DialogDescription>Your writer name travels with your account — every device, every story.</DialogDescription></DialogHeader><form onSubmit={e => { e.preventDefault(); setName(draftName.trim()); setCircle(false); }} className="space-y-4"><label className="field-label" htmlFor="writer-name">Your writer name</label><input id="writer-name" className="studio-input" value={draftName} onChange={e => setDraftName(e.target.value)} placeholder="What shall we call you?" required maxLength={40} /><Button type="submit" className="w-full"><Sparkles /> Enter my studio</Button></form></DialogContent></Dialog>
   </div>;
 }
 export function PageHeading({ eyebrow, title, description, icon: Icon = BookOpen }: { eyebrow: string; title: string; description: string; icon?: typeof BookOpen }) {

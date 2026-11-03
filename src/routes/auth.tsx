@@ -5,9 +5,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/components/auth-context';
-import { useStudio } from '@/components/studio-context';
 import { isValidEmail, passwordStrength, type Strength } from '@/lib/auth-gate';
 import { pageMeta } from '@/components/studio-layout';
+import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 import logo from '@/assets/logo.png.asset.json';
 
 export const Route = createFileRoute('/auth')({
@@ -26,9 +27,16 @@ function GoogleIcon() {
   );
 }
 
+const friendlyAuthError = (message: string) => {
+  if (/invalid login credentials/i.test(message)) return 'That spell does not match our records.';
+  if (/already registered/i.test(message)) return 'This email already walks our halls — try signing in.';
+  if (/email not confirmed/i.test(message)) return 'Confirm your email first — the raven is waiting in your inbox.';
+  if (/rate limit/i.test(message)) return 'Too many attempts — the portal needs a breath. Try again shortly.';
+  return message;
+};
+
 function Gateway() {
-  const { user, hydrated, signIn } = useAuth();
-  const { setName } = useStudio();
+  const { user, hydrated } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -37,29 +45,45 @@ function Gateway() {
   const [penName, setPenName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [busy, setBusy] = useState<null | 'password' | 'google'>(null);
+  const [busy, setBusy] = useState<null | 'password' | 'google' | 'lovable'>(null);
 
   useEffect(() => {
     if (hydrated && user) void navigate({ to: '/', replace: true });
   }, [hydrated, user, navigate]);
 
-  const enterPortal = (name: string) => {
-    setBusy(null);
-    signIn(name, email.trim());
-    if (mode === 'signup') setName(name);
-    void navigate({ to: '/', replace: true });
+  const socialSignIn = async (provider: 'google' | 'lovable') => {
+    setBusy(provider === 'google' ? 'google' : 'lovable');
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+        extraParams: provider === 'google' ? { prompt: 'select_account' } : {},
+      });
+      if (result.error) {
+        toast.error(friendlyAuthError(result.error.message || 'The portal did not open. Try again.'));
+        setBusy(null);
+        return;
+      }
+      if (!result.redirected) {
+        setBusy(null);
+        void navigate({ to: '/', replace: true });
+      }
+    } catch {
+      toast.error('The portal did not open. Try again.');
+      setBusy(null);
+    }
   };
 
-  const mockSignIn = (event: React.FormEvent) => {
+  const signIn = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!isValidEmail(email)) { toast.error('That email does not look quite magical yet.'); return; }
     if (!password) { toast.error('Your secret spell (password) is missing.'); return; }
     setBusy('password');
-    const local = email.trim().split('@')[0] ?? email.trim();
-    window.setTimeout(() => enterPortal(local.replace(/[._]/g, ' ')), 1200);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) { toast.error(friendlyAuthError(error.message)); setBusy(null); return; }
+    void navigate({ to: '/', replace: true });
   };
 
-  const mockSignUp = (event: React.FormEvent) => {
+  const signUp = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!penName.trim()) { toast.error('Every creator needs a pen name.'); return; }
     if (!isValidEmail(email)) { toast.error('That email does not look quite magical yet.'); return; }
@@ -67,16 +91,22 @@ function Gateway() {
     if (password !== confirm) { toast.error('The two passwords do not match.'); return; }
     if (!agreed) { toast.error('Please agree to the Terms of the Multiverse first.'); return; }
     setBusy('password');
-    window.setTimeout(() => enterPortal(penName.trim()), 1200);
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { name: penName.trim() }, emailRedirectTo: window.location.origin },
+    });
+    if (error) { toast.error(friendlyAuthError(error.message)); setBusy(null); return; }
+    if (data.session) { void navigate({ to: '/', replace: true }); return; }
+    toast.info('A confirmation raven is flying to your inbox — click the link to ignite your account.');
+    setBusy(null);
   };
 
-  const mockGoogle = () => {
-    setBusy('google');
-    window.setTimeout(() => {
-      setBusy(null);
-      signIn('Guest Creator', 'creator@gmail.com', 'google');
-      void navigate({ to: '/', replace: true });
-    }, 1200);
+  const sendReset = () => {
+    if (!isValidEmail(email)) { toast.error('Type your email above first, then the raven can find you.'); return; }
+    void supabase.auth
+      .resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin })
+      .then(({ error }) => toast.info(error ? friendlyAuthError(error.message) : 'A recovery raven is on its way — check your inbox for the reset scroll.'));
   };
 
   const strength: Strength | null = password ? passwordStrength(password) : null;
@@ -93,7 +123,7 @@ function Gateway() {
         <p className="auth-tagline">Where 26 letters ignite infinite multiverses.</p>
 
         {mode === 'signin' ? (
-          <form className="auth-form" onSubmit={mockSignIn}>
+          <form className="auth-form" onSubmit={event => void signIn(event)}>
             <h1>Welcome Back, Creator</h1>
             <p className="auth-sub">Step back into the realm of infinite stories.</p>
             <label className="auth-field">
@@ -106,15 +136,16 @@ function Gateway() {
               <button type="button" className="pw-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
             </label>
             <div className="auth-row">
-              <button type="button" className="auth-link" onClick={() => toast.info('A recovery raven is on its way — check your inbox for the reset scroll.')}>Forgot Password?</button>
+              <button type="button" className="auth-link" onClick={sendReset}>Forgot Password?</button>
             </div>
             <Button variant="enchanted" size="lg" className="auth-cta" disabled={locked}><Sparkles /> Enter the Portal</Button>
             <div className="auth-divider"><span>or continue with</span></div>
-            <Button type="button" variant="glass" className="auth-google" onClick={mockGoogle} disabled={locked}><GoogleIcon /> Sign in with Google</Button>
+            <Button type="button" variant="glass" className="auth-google" onClick={() => void socialSignIn('google')} disabled={locked}><GoogleIcon /> Sign in with Google</Button>
+            <Button type="button" variant="ghost" className="auth-lovable" onClick={() => void socialSignIn('lovable')} disabled={locked}><Sparkles size={15} /> Continue with Lovable</Button>
             <p className="auth-switch">New to Beyond A-Z?<button type="button" onClick={() => setMode('signup')}>Create an Account</button></p>
           </form>
         ) : (
-          <form className="auth-form" onSubmit={mockSignUp}>
+          <form className="auth-form" onSubmit={event => void signUp(event)}>
             <h1>Begin Your Creative Journey</h1>
             <p className="auth-sub">Transcend the limits of ordinary thought.</p>
             <label className="auth-field">
@@ -140,11 +171,12 @@ function Gateway() {
             </label>
             <label className="auth-terms">
               <Checkbox checked={agreed} onCheckedChange={checked => setAgreed(checked === true)} disabled={locked} aria-label="Agree to the terms" />
-              <span>I agree to the <button type="button" className="auth-link" onClick={() => toast.info('The Terms of the Multiverse: be kind, keep creating, believe in impossible things.')}>Terms of the Multiverse</button> and <button type="button" className="auth-link" onClick={() => toast.info('Privacy Lore: this preview keeps everything on your device — nothing leaves it.')}>Privacy Lore</button>.</span>
+              <span>I agree to the <button type="button" className="auth-link" onClick={() => toast.info('The Terms of the Multiverse: be kind, keep creating, believe in impossible things.')}>Terms of the Multiverse</button> and <button type="button" className="auth-link" onClick={() => toast.info('Privacy Lore: your creations are saved to your own Beyond A-Z account and stay yours.')}>Privacy Lore</button>.</span>
             </label>
             <Button variant="enchanted" size="lg" className="auth-cta" disabled={locked}><Sparkles /> Ignite Your Account</Button>
             <div className="auth-divider"><span>or continue with</span></div>
-            <Button type="button" variant="glass" className="auth-google" onClick={mockGoogle} disabled={locked}><GoogleIcon /> Sign up with Google</Button>
+            <Button type="button" variant="glass" className="auth-google" onClick={() => void socialSignIn('google')} disabled={locked}><GoogleIcon /> Sign up with Google</Button>
+            <Button type="button" variant="ghost" className="auth-lovable" onClick={() => void socialSignIn('lovable')} disabled={locked}><Sparkles size={15} /> Continue with Lovable</Button>
             <p className="auth-switch">Already have an account?<button type="button" onClick={() => setMode('signin')}>Sign In</button></p>
           </form>
         )}

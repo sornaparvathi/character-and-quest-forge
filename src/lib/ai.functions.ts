@@ -147,7 +147,7 @@ export const generateCharacter = createServerFn({ method: 'POST' })
           fatalFlaw: details.fatalFlaw,
           voice: details.voice,
         },
-        image_path: imageUrl ? null : null,
+        image_path: null,
       })
       .select('id')
       .single();
