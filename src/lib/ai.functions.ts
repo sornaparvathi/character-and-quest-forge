@@ -56,13 +56,13 @@ const pick = (value: unknown, fallback: string) => (typeof value === 'string' &&
 function normalizeIdea(parsed: unknown, fallback: Sectioned): Sectioned {
   const raw = (parsed ?? {}) as Record<string, unknown>;
   const sections: Record<string, string> = {
-    'Logline / Hook': pick(raw.logline, fallback.sections['Logline / Hook'] ?? ''),
-    'Three-Act Synopsis': pick(raw.acts, fallback.sections['Three-Act Synopsis'] ?? ''),
-    'Key Characters': pick(raw.characters, fallback.sections['Key Characters'] ?? ''),
-    'Plot Twist': pick(raw.twist, fallback.sections['Plot Twist'] ?? ''),
-    'Sample Scene': pick(raw.scene, fallback.sections['Sample Scene'] ?? ''),
+    'Logline / Hook': pick(raw['logline'], fallback.sections['Logline / Hook'] ?? ''),
+    'Three-Act Synopsis': pick(raw['acts'], fallback.sections['Three-Act Synopsis'] ?? ''),
+    'Key Characters': pick(raw['characters'], fallback.sections['Key Characters'] ?? ''),
+    'Plot Twist': pick(raw['twist'], fallback.sections['Plot Twist'] ?? ''),
+    'Sample Scene': pick(raw['scene'], fallback.sections['Sample Scene'] ?? ''),
   };
-  const title = pick(raw.title, fallback.title).split(/\s+/).slice(0, 8).join(' ');
+  const title = pick(raw['title'], fallback.title).split(/\s+/).slice(0, 8).join(' ');
   const content = `# ${title}\n\n${Object.entries(sections).map(([name, text]) => `## ${name}\n${text}`).join('\n\n')}`;
   return { title, sections, content };
 }
@@ -122,11 +122,11 @@ export const generateCharacter = createServerFn({ method: 'POST' })
       });
       const raw = (parseJsonLoose(extractText(response)) ?? {}) as Record<string, unknown>;
       details = {
-        motivation: pick(raw.motivation, details.motivation),
-        hiddenSecret: pick(raw.hiddenSecret, details.hiddenSecret),
-        fatalFlaw: pick(raw.fatalFlaw, details.fatalFlaw),
-        voice: pick(raw.voice, details.voice),
-        imagePrompt: pick(raw.imagePrompt, details.imagePrompt),
+        motivation: pick(raw['motivation'], details.motivation),
+        hiddenSecret: pick(raw['hiddenSecret'], details.hiddenSecret),
+        fatalFlaw: pick(raw['fatalFlaw'], details.fatalFlaw),
+        voice: pick(raw['voice'], details.voice),
+        imagePrompt: pick(raw['imagePrompt'], details.imagePrompt),
       };
     } catch (error) {
       console.error('Character weave fell back to the offline pattern:', error);
@@ -242,9 +242,9 @@ export const startAdventure = createServerFn({ method: 'POST' })
         input: `Begin a new interactive adventure. The player is "${data.archetype}" on a ${data.difficulty === 'Adventurer' ? 'perilous, high-stakes' : 'wondrous, dreamlike'} journey that begins at a mysterious door that appears at midnight. Write the opening scene in second person, present tense, addressed to "you", and three choices.`,
       });
       const raw = (parseJsonLoose(extractText(response)) ?? {}) as Record<string, unknown>;
-      const choices = Array.isArray(raw.choices) ? raw.choices.filter((c): c is string => typeof c === 'string').slice(0, 3) : [];
+      const choices = Array.isArray(raw['choices']) ? raw['choices'].filter((c): c is string => typeof c === 'string').slice(0, 3) : [];
       step = {
-        scene: pick(raw.scene, opening.scene),
+        scene: pick(raw['scene'], opening.scene),
         choices: choices.length === 3 ? choices : opening.choices,
         ended: false,
         ending: '',
@@ -281,13 +281,13 @@ export const advanceAdventure = createServerFn({ method: 'POST' })
         input: `The player is "${session.archetype}" on a ${session.difficulty === 'Adventurer' ? 'perilous' : 'wondrous'} journey, now on turn ${turn} of 7.\nChoices so far: ${history.map(h => h.choice).join(' | ')}\nPrevious scene: ${state.lastScene ?? ''}\nThe player chose: "${data.choice}".\n${finale ? 'This choice leads to the finale — set "ended": true and write the ending.' : 'Continue with the next scene and three fresh choices.'}`,
       });
       const raw = (parseJsonLoose(extractText(response)) ?? {}) as Record<string, unknown>;
-      const choices = Array.isArray(raw.choices) ? raw.choices.filter((c): c is string => typeof c === 'string').slice(0, 3) : [];
-      const ended = raw.ended === true || finale;
+      const choices = Array.isArray(raw['choices']) ? raw['choices'].filter((c): c is string => typeof c === 'string').slice(0, 3) : [];
+      const ended = raw['ended'] === true || finale;
       step = {
-        scene: pick(raw.scene, 'The mists thicken around you, waiting.'),
+        scene: pick(raw['scene'], 'The mists thicken around you, waiting.'),
         choices: ended ? [] : choices.length === 3 ? choices : ['Press on', 'Look closer', 'Wait and listen'],
         ended,
-        ending: ended ? pick(raw.ending, pick(raw.scene, 'Your story closes like a book that will open again.')) : '',
+        ending: ended ? pick(raw['ending'], pick(raw['scene'], 'Your story closes like a book that will open again.')) : '',
       };
     } catch (error) {
       console.error('Adventure turn fell back to the offline mists:', error);
