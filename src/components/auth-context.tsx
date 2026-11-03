@@ -15,8 +15,8 @@ function userFromSession(session: Session | null): AuthUser | null {
   if (!current?.email) return null;
   const meta = (current.user_metadata ?? {}) as Record<string, unknown>;
   const named =
-    (typeof meta.name === 'string' && meta.name.trim()) ||
-    (typeof meta.full_name === 'string' && meta.full_name.trim()) ||
+    (typeof meta['name'] === 'string' && meta['name'].trim()) ||
+    (typeof meta['full_name'] === 'string' && meta['full_name'].trim()) ||
     current.email.split('@')[0] ||
     'Creator';
   return { name: named, email: current.email };
